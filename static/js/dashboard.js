@@ -35,7 +35,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 // Tampilkan data summary di HTML
                 displaySummaryCards(data);
                 // Tampilkan transaksi terkini
-                displayRecentTransactionsTable(data.recent_transactions);
+                displayRecentTransactionsTable(data.recent_activity);
             })
             .catch(error => {
                 console.error('Error fetching dashboard data:', error);
@@ -98,7 +98,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     <div class="card-body">
                         <div class="d-flex justify-content-between align-items-center">
                              <div>
-                                <h5 class="card-title mb-0">${formatNumber(data.recent_transactions_count || 0)}</h5>
+                                <h5 class="card-title mb-0">${formatNumber(data.total_transactions || 0)}</h5>
                                 <p class="card-text small mb-0">Total Transaksi</p>
                             </div>
                              <i class="bi bi-receipt-cutoff fs-1 opacity-50"></i>
@@ -141,7 +141,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     <td><span class="badge bg-${typeClass}"><i class="bi bi-${typeIcon} me-1"></i> ${tx.type}</span></td>
                     <td><code>${tx.item_id}</code></td>
                     <td>${formatNumber(tx.quantity)}</td>
-                    <td>${tx.user || '-'}</td>
+                    <td>${tx.user_username || '-'}</td>
                     <td><small>${tx.timestamp || '-'}</small></td>
                      <td><small>${tx.notes || '-'}</small></td>
                 </tr>

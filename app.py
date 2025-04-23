@@ -253,31 +253,48 @@ def manage_users_view():
 
 @app.route('/api/dashboard/summary', methods=['GET'])
 @login_required
-@role_required(['admin', 'manajer'])
+@role_required(['admin', 'manajer']) # Hanya admin & manajer boleh lihat summary
 def api_dashboard_summary():
-    # TODO: Implementasi dengan query SQLAlchemy
-    # Contoh:
+    """API Endpoint untuk mendapatkan data summary dashboard."""
     try:
-        total_items = InventoryItem.query.count()
-        total_value = db.session.query(db.func.sum(InventoryItem.quantity)).scalar() or 0 # Contoh, perlu harga jika mau value
+        # Hitung jumlah item unik
+        total_unique_items = InventoryItem.query.count()
+
+        # Hitung total kuantitas stok
+        total_stock_quantity = db.session.query(db.func.sum(InventoryItem.quantity)).scalar() or 0
+
+        # Hitung total transaksi
+        total_transactions = Transaction.query.count()
+
+        # Ambil 5 transaksi terbaru (Kembalikan order by timestamp)
         recent_transactions = Transaction.query.order_by(Transaction.timestamp.desc()).limit(5).all()
+        # recent_transactions = Transaction.query.order_by(Transaction.id.desc()).limit(5).all() # Order by ID for DEBUGGING
+
+        # Format data transaksi terkini
+        recent_activity_list = []
+        for t in recent_transactions:
+            # Coba dapatkan nama item, tangani jika item mungkin sudah dihapus (meskipun FK constraint harusnya mencegah)
+            item_name = t.item.name if t.item else "[Item Dihapus]"
+            recent_activity_list.append({
+                'id': t.id,
+                'type': t.type,
+                'item_id': t.item_id,
+                'item_name': item_name,
+                'quantity': t.quantity,
+                'user': t.user_username,
+                'timestamp': t.timestamp.strftime('%Y-%m-%d %H:%M:%S'),
+                'notes': t.notes
+            })
 
         summary_data = {
-            'total_items': total_items,
-            'total_stock_quantity': total_value, # Nama variabel disesuaikan
-            'low_stock_items': 0, # TODO: Query item dengan quantity < threshold
-            'recent_activity': [
-                {
-                    'id': t.id,
-                    'type': t.type,
-                    'item_name': t.item.name, # Akses relasi
-                    'quantity': t.quantity,
-                    'user': t.user_username,
-                    'timestamp': t.timestamp.strftime('%Y-%m-%d %H:%M:%S')
-                } for t in recent_transactions
-            ]
+            'total_unique_items': total_unique_items,
+            'total_stock_quantity': total_stock_quantity,
+            'total_transactions': total_transactions,
+            # 'low_stock_items': 0, # TODO: Implementasi jika diperlukan
+            'recent_activity': recent_activity_list
         }
         return jsonify(summary_data)
+
     except Exception as e:
         app.logger.error(f"Error fetching dashboard summary: {e}")
         return jsonify({"error": "Gagal mengambil ringkasan dashboard"}), 500
@@ -374,6 +391,125 @@ def api_add_inventory_item():
         app.logger.error(f"Error adding inventory item {item_id}: {e}")
         return jsonify({"error": "Gagal menambahkan item ke database"}), 500
 
+@app.route('/api/inventory/<item_id>', methods=['GET'])
+@login_required
+@role_required(['admin', 'manajer', 'operator']) # Semua boleh lihat detail
+def api_get_inventory_item(item_id):
+    """API Endpoint untuk mendapatkan detail item inventaris."""
+    try:
+        item = InventoryItem.query.get(item_id)
+        if not item:
+            return jsonify({"error": f"Item dengan ID {item_id} tidak ditemukan"}), 404
+
+        item_data = {
+            'id': item.id,
+            'name': item.name,
+            'quantity': item.quantity,
+            'category': item.category,
+            'added_by': item.added_by,
+            'last_update': item.last_update.strftime('%Y-%m-%d %H:%M:%S') if item.last_update else None
+        }
+        return jsonify(item_data)
+    except Exception as e:
+        app.logger.error(f"Error fetching item {item_id}: {e}")
+        return jsonify({"error": "Gagal mengambil detail item"}), 500
+
+@app.route('/api/inventory/<item_id>', methods=['PUT'])
+@login_required
+@role_required(['admin']) # Hanya admin boleh update
+def api_update_inventory_item(item_id):
+    """API Endpoint untuk mengupdate item inventaris (hanya Admin)."""
+    if not request.is_json:
+        return jsonify({"error": "Request harus dalam format JSON"}), 400
+
+    item = InventoryItem.query.get(item_id)
+    if not item:
+        return jsonify({"error": f"Item dengan ID {item_id} tidak ditemukan"}), 404
+
+    data = request.get_json()
+    updated = False
+
+    try:
+        if 'name' in data:
+            name = data['name'].strip()
+            if not name:
+                return jsonify({"error": "Nama item tidak boleh kosong"}), 400
+            if item.name != name:
+                item.name = name
+                updated = True
+
+        if 'category' in data:
+            category = data['category'].strip()
+            if not category:
+                 return jsonify({"error": "Kategori tidak boleh kosong"}), 400
+            if item.category != category:
+                item.category = category
+                updated = True
+
+        # Note: Mengubah quantity sebaiknya melalui transaksi masuk/keluar
+        # Jika ingin mengizinkan penyesuaian langsung (misal stock opname):
+        if 'quantity' in data:
+             try:
+                 quantity = int(data['quantity'])
+                 if quantity < 0:
+                     return jsonify({"error": "Jumlah tidak boleh negatif"}), 400
+                 if item.quantity != quantity:
+                     item.quantity = quantity
+                     updated = True # Anggap perlu update timestamp jika quantity berubah
+             except (ValueError, TypeError):
+                 return jsonify({"error": "Jumlah harus berupa angka bulat"}), 400
+
+        if updated:
+            # Timestamp last_update akan otomatis diupdate oleh onupdate=datetime.utcnow
+            db.session.commit()
+
+        # Return item yang sudah diupdate
+        item_data = {
+            'id': item.id,
+            'name': item.name,
+            'quantity': item.quantity,
+            'category': item.category,
+            'added_by': item.added_by,
+            'last_update': item.last_update.strftime('%Y-%m-%d %H:%M:%S') if item.last_update else None
+        }
+        return jsonify(item_data)
+
+    except Exception as e:
+        db.session.rollback()
+        app.logger.error(f"Error updating item {item_id}: {e}")
+        return jsonify({"error": "Gagal mengupdate item"}), 500
+
+@app.route('/api/inventory/<item_id>', methods=['DELETE'])
+@login_required
+@role_required(['admin']) # Hanya admin boleh delete
+def api_delete_inventory_item(item_id):
+    """API Endpoint untuk menghapus item inventaris (hanya Admin)."""
+    item = InventoryItem.query.get(item_id)
+    if not item:
+        return jsonify({"error": f"Item dengan ID {item_id} tidak ditemukan"}), 404
+
+    try:
+        # Cek apakah ada transaksi terkait item ini
+        transaction_count = Transaction.query.filter_by(item_id=item_id).count()
+        if transaction_count > 0:
+            return jsonify({"error": f"Tidak dapat menghapus item '{item.name}' karena memiliki {transaction_count} riwayat transaksi."}), 400
+
+        # Opsional: Cek apakah stok masih ada (mungkin tidak perlu jika cek transaksi sudah cukup)
+        # if item.quantity > 0:
+        #     return jsonify({"error": f"Tidak dapat menghapus item '{item.name}' karena stok masih ada ({item.quantity})."}), 400
+
+        # Hapus item
+        item_name = item.name # Simpan nama untuk pesan respons
+        db.session.delete(item)
+        db.session.commit()
+
+        return jsonify({"message": f"Item '{item_name}' (ID: {item_id}) berhasil dihapus"})
+
+    except Exception as e:
+        db.session.rollback()
+        app.logger.error(f"Error deleting item {item_id}: {e}")
+        return jsonify({"error": "Gagal menghapus item"}), 500
+
 # --- API Users ---
 @app.route('/api/users', methods=['GET'])
 @login_required
@@ -442,6 +578,94 @@ def api_add_user():
         db.session.rollback()
         app.logger.error(f"Error adding user {username}: {e}")
         return jsonify({"error": "Gagal menambahkan pengguna ke database"}), 500
+
+@app.route('/api/users/<username>', methods=['PUT'])
+@login_required
+@role_required(['admin'])
+def api_update_user(username):
+    """API Endpoint untuk mengupdate data pengguna (hanya Admin)."""
+    if not request.is_json:
+        return jsonify({"error": "Request harus dalam format JSON"}), 400
+
+    user = User.query.filter_by(username=username).first()
+    if not user:
+        return jsonify({"error": f"Pengguna '{username}' tidak ditemukan"}), 404
+
+    data = request.get_json()
+    updated = False
+
+    try:
+        if 'name' in data:
+            name = data['name'].strip()
+            if not name:
+                return jsonify({"error": "Nama tidak boleh kosong"}), 400
+            if user.name != name:
+                user.name = name
+                updated = True
+
+        if 'role' in data:
+            role = data['role']
+            allowed_roles = ['admin', 'manajer', 'operator']
+            if role not in allowed_roles:
+                return jsonify({"error": f"Role tidak valid. Pilih salah satu dari: {', '.join(allowed_roles)}"}), 400
+            # Cegah admin mengubah role dirinya sendiri (jika diinginkan, bisa dihapus)
+            if username == session.get('user', {}).get('username') and user.role == 'admin' and role != 'admin':
+                 return jsonify({"error": "Admin tidak dapat mengubah role dirinya sendiri."}), 400
+            if user.role != role:
+                user.role = role
+                updated = True
+
+        # Update password jika diberikan dan tidak kosong
+        if 'password' in data and data['password']:
+            user.set_password(data['password']) # Password akan di-hash
+            updated = True
+
+        if updated:
+            db.session.commit()
+
+        # Return data user yang diupdate (tanpa password hash)
+        user_data = {
+            'username': user.username,
+            'name': user.name,
+            'role': user.role
+        }
+        return jsonify(user_data)
+
+    except Exception as e:
+        db.session.rollback()
+        app.logger.error(f"Error updating user {username}: {e}")
+        return jsonify({"error": "Gagal mengupdate pengguna"}), 500
+
+@app.route('/api/users/<username>', methods=['DELETE'])
+@login_required
+@role_required(['admin'])
+def api_delete_user(username):
+    """API Endpoint untuk menghapus pengguna (hanya Admin)."""
+    user = User.query.filter_by(username=username).first()
+    if not user:
+        return jsonify({"error": f"Pengguna '{username}' tidak ditemukan"}), 404
+
+    # Cek apakah user mencoba menghapus dirinya sendiri
+    if username == session.get('user', {}).get('username'):
+        return jsonify({"error": "Tidak dapat menghapus akun Anda sendiri."}), 400
+
+    try:
+        # Cek apakah user punya transaksi (opsional, tergantung aturan bisnis)
+        # transaction_count = Transaction.query.filter_by(user_username=username).count()
+        # if transaction_count > 0:
+        #     return jsonify({"error": f"Tidak dapat menghapus pengguna '{username}' karena memiliki riwayat transaksi."}), 400
+
+        db.session.delete(user)
+        db.session.commit()
+        return jsonify({"message": f"Pengguna '{username}' berhasil dihapus"})
+
+    except Exception as e:
+        db.session.rollback()
+        app.logger.error(f"Error deleting user {username}: {e}")
+        # Tangani error jika ada foreign key constraint (misal dari transaksi)
+        if "foreign key constraint" in str(e).lower():
+             return jsonify({"error": f"Tidak dapat menghapus pengguna '{username}' karena terkait dengan data lain (misal: transaksi)."}), 400
+        return jsonify({"error": "Gagal menghapus pengguna"}), 500
 
 # --- API Transactions ---
 @app.route('/api/transactions', methods=['GET'])
@@ -521,6 +745,7 @@ def api_add_incoming_transaction():
             item_id=item_id,
             quantity=quantity,
             user_username=current_user,
+            timestamp=datetime.utcnow(),
             notes=notes
         )
 
@@ -594,6 +819,7 @@ def api_add_outgoing_transaction():
             item_id=item_id,
             quantity=quantity,
             user_username=current_user,
+            timestamp=datetime.utcnow(),
             notes=notes
         )
 
