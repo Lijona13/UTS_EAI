@@ -1,0 +1,56 @@
+{% extends "base.html" %}
+
+{% block title %}Input Barang Keluar{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+     <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+        <h1 class="h2"><i class="bi bi-box-arrow-up"></i> Input Barang Keluar</h1>
+    </div>
+
+     <div class="row">
+        <div class="col-md-5">
+            <h4>Formulir Barang Keluar</h4>
+             <div class="card">
+                 <div class="card-body">
+                     <form id="form-barang-keluar">
+                          <div class="mb-3">
+                            <label for="item_id_keluar" class="form-label">ID Item <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control" id="item_id_keluar" name="item_id" required list="inventory_item_ids">
+                            <datalist id="inventory_item_ids">
+                                </datalist>
+                             <div class="form-text">Masukkan ID item yang akan dikeluarkan.</div>
+                        </div>
+                        <div class="mb-3">
+                            <label for="quantity_keluar" class="form-label">Jumlah Keluar <span class="text-danger">*</span></label>
+                            <input type="number" class="form-control" id="quantity_keluar" name="quantity" min="1" required>
+                             <div id="stock-info" class="form-text text-muted"></div>
+                        </div>
+                         <div class="mb-3">
+                            <label for="notes_keluar" class="form-label">Catatan (Opsional)</label>
+                            <textarea class="form-control" id="notes_keluar" name="notes" rows="2" placeholder="Contoh: Untuk Dept IT"></textarea>
+                        </div>
+                        <button type="submit" class="btn btn-warning w-100"><i class="bi bi-dash-lg"></i> Catat Barang Keluar</button>
+                    </form>
+                     <div id="keluar-form-feedback" class="mt-3"></div>
+                </div>
+            </div>
+        </div>
+         <div class="col-md-7">
+            <h4><i class="bi bi-clock-history"></i> Riwayat Barang Keluar Terbaru</h4>
+            <div id="recent-outgoing-transactions" class="table-responsive">
+                 <div class="d-flex justify-content-center text-secondary mt-5">
+                     <div class="spinner-border spinner-border-sm" role="status">
+                        <span class="visually-hidden">Memuat riwayat...</span>
+                    </div>
+                    <span class="ms-2">Memuat riwayat...</span>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/barang_keluar.js') }}"></script>
+{% endblock %}

@@ -1,0 +1,15 @@
+{% extends "base.html" %}
+
+{% block title %}Akses Ditolak{% endblock %}
+
+{% block content %}
+<div class="container mt-5 text-center">
+    <div class="alert alert-danger" role="alert">
+      <h4 class="alert-heading"><i class="bi bi-exclamation-octagon-fill"></i> Akses Ditolak! (Error 403)</h4>
+      <p>Maaf, Anda tidak memiliki izin yang cukup untuk mengakses halaman atau sumber daya yang diminta.</p>
+      <hr>
+      <p class="mb-0">Silakan hubungi administrator jika Anda merasa ini adalah kesalahan.</p>
+    </div>
+    <a href="{{ url_for('dashboard_view') }}" class="btn btn-primary mt-3"><i class="bi bi-arrow-left-circle"></i> Kembali ke Dashboard</a>
+</div>
+{% endblock %}

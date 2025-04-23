@@ -1,0 +1,52 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+        <h1 class="h2"><i class="bi bi-speedometer2"></i> Dashboard</h1>
+        </div>
+
+    <div class="alert alert-info" role="alert">
+      Selamat datang kembali, <strong>{{ session.user.name }}</strong>! Anda login sebagai <strong>{{ session.user.role }}</strong>.
+    </div>
+
+    {% if user_role in ['admin', 'manajer'] %}
+    <h4>Ringkasan Sistem</h4>
+    <div id="dashboard-summary" class="row mb-4">
+        <div class="col-md-12">
+            <div class="d-flex justify-content-center text-primary mt-3">
+                <div class="spinner-border" role="status">
+                    <span class="visually-hidden">Memuat data summary...</span>
+                </div>
+                 <span class="ms-2">Memuat data summary...</span>
+            </div>
+        </div>
+    </div>
+
+    <hr>
+
+    <h4><i class="bi bi-clock-history"></i> Transaksi Terkini</h4>
+    <div id="recent-transactions-table" class="table-responsive">
+        <div class="d-flex justify-content-center text-secondary mt-3">
+             <div class="spinner-border spinner-border-sm" role="status">
+                 <span class="visually-hidden">Memuat transaksi...</span>
+            </div>
+            <span class="ms-2">Memuat transaksi...</span>
+        </div>
+    </div>
+    {% else %}
+     <div class="alert alert-light" role="alert">
+        Gunakan menu navigasi di atas untuk mengakses fitur inventaris dan transaksi.
+     </div>
+     {% endif %}
+
+</div>
+{% endblock %}
+
+{% block scripts %}
+    {% if user_role in ['admin', 'manajer'] %}
+    <script src="{{ url_for('static', filename='js/dashboard.js') }}"></script>
+    {% endif %}
+{% endblock %}

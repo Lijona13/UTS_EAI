@@ -1,0 +1,8 @@
+Flask>=2.0
+Flask-SQLAlchemy
+mysql-connector-python
+Werkzeug
+python-dotenv
+# Tambahkan library lain jika Anda menggunakannya nanti, misal:
+# Flask-Login>=0.5
+# requests>=2.25 # Jika service lain memanggil API ini

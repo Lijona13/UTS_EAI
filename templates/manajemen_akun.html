@@ -1,0 +1,111 @@
+{% extends "base.html" %}
+
+{% block title %}Manajemen Akun Pengguna{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+        <h1 class="h2"><i class="bi bi-people"></i> Manajemen Akun Pengguna</h1>
+        <button type="button" class="btn btn-success" data-bs-toggle="modal" data-bs-target="#modalTambahUser">
+            <i class="bi bi-person-plus"></i> Tambah Pengguna Baru
+        </button>
+    </div>
+
+    <div class="card">
+        <div class="card-body">
+            <div class="table-responsive" id="users-table-container">
+                <div class="d-flex justify-content-center text-secondary my-5">
+                    <div class="spinner-border spinner-border-sm" role="status">
+                        <span class="visually-hidden">Memuat data pengguna...</span>
+                    </div>
+                    <span class="ms-2">Memuat data pengguna...</span>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Tambah User -->
+<div class="modal fade" id="modalTambahUser" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title"><i class="bi bi-person-plus"></i> Tambah Pengguna Baru</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="form-tambah-user">
+                    <div class="mb-3">
+                        <label for="new_username" class="form-label">Username <span class="text-danger">*</span></label>
+                        <input type="text" class="form-control" id="new_username" name="username" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="new_password" class="form-label">Password <span class="text-danger">*</span></label>
+                        <input type="password" class="form-control" id="new_password" name="password" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="new_name" class="form-label">Nama Lengkap <span class="text-danger">*</span></label>
+                        <input type="text" class="form-control" id="new_name" name="name" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="new_role" class="form-label">Role <span class="text-danger">*</span></label>
+                        <select class="form-select" id="new_role" name="role" required>
+                            <option value="">Pilih Role...</option>
+                            <option value="admin">Admin</option>
+                            <option value="manajer">Manajer</option>
+                            <option value="operator">Operator</option>
+                        </select>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <div id="tambah-user-feedback" class="me-auto"></div>
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
+                <button type="submit" form="form-tambah-user" class="btn btn-success">Simpan</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Edit User -->
+<div class="modal fade" id="modalEditUser" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title"><i class="bi bi-person-gear"></i> Edit Pengguna</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="form-edit-user">
+                    <input type="hidden" id="edit_username" name="username">
+                    <div class="mb-3">
+                        <label for="edit_name" class="form-label">Nama Lengkap <span class="text-danger">*</span></label>
+                        <input type="text" class="form-control" id="edit_name" name="name" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="edit_role" class="form-label">Role <span class="text-danger">*</span></label>
+                        <select class="form-select" id="edit_role" name="role" required>
+                            <option value="admin">Admin</option>
+                            <option value="manajer">Manajer</option>
+                            <option value="operator">Operator</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label for="edit_password" class="form-label">Password Baru (Kosongkan jika tidak diubah)</label>
+                        <input type="password" class="form-control" id="edit_password" name="password">
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <div id="edit-user-feedback" class="me-auto"></div>
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
+                <button type="submit" form="form-edit-user" class="btn btn-primary">Update</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/manajemen_akun.js') }}"></script>
+{% endblock %}

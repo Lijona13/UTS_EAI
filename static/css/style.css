@@ -1,0 +1,37 @@
+/* static/css/style.css */
+
+/* Tambahkan gaya kustom Anda di sini */
+/* Contoh: */
+/* body {
+    padding-top: 56px; /* Sesuaikan jika navbar fixed-top */
+/* } */
+
+.table-responsive {
+    margin-top: 1rem;
+}
+
+.card {
+    margin-bottom: 1.5rem;
+}
+
+.form-text {
+    font-size: 0.875em;
+}
+
+/* Styling badge role */
+.badge.bg-admin { background-color: #dc3545; } /* Merah */
+.badge.bg-manajer { background-color: #ffc107; color: #000 !important; } /* Kuning */
+.badge.bg-operator { background-color: #0d6efd; } /* Biru */
+.badge.bg-secondary { background-color: #6c757d; } /* Abu-abu default */
+
+
+/* Perbaiki warna teks dropdown item aktif di navbar dark */
+.navbar-dark .navbar-nav .dropdown-menu .dropdown-item.active, 
+.navbar-dark .navbar-nav .dropdown-menu .dropdown-item:active {
+    color: #fff; /* Teks putih */
+    background-color: #0d6efd; /* Latar biru (atau sesuaikan) */
+}
+.navbar-dark .navbar-nav .dropdown-menu .dropdown-item:hover {
+     background-color: #e9ecef; /* Latar abu saat hover */
+     color: #000; /* Teks hitam saat hover */
+}
